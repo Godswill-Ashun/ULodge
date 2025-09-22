@@ -1,51 +1,48 @@
-import React from "react";
-import { View, Text, StyleSheet, Button } from "react-native";
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { getFirestore, doc, getDoc, Timestamp } from '@react-native-firebase/firestore';
+import { RouteProp, useRoute } from '@react-navigation/native';
 
-export default function ReceiptScreen({ navigation, route }: any) {
-  // For now, mock booking details.
-  // Later you can pass real data via route.params
-  const bookingDetails = route.params || {
-    bookingId: "ABC123",
-    date: "2025-09-22",
-    room: "Deluxe Room",
-    amount: "$100",
-  };
+type ReceiptRouteProp = RouteProp<{ params: { bookingId: string } }, 'params'>;
+
+const ReceiptScreen = () => {
+  const route = useRoute<ReceiptRouteProp>();
+  const { bookingId } = route.params;
+  const [booking, setBooking] = useState<{ name: string; amount: number; date: Timestamp } | null>(null);
+
+  const firestore = getFirestore();
+
+  useEffect(() => {
+    const fetchBooking = async () => {
+      try {
+        const docRef = doc(firestore, 'bookings', bookingId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setBooking(docSnap.data() as any);
+        }
+      } catch (err) {
+        console.log('Error fetching booking:', err);
+      }
+    };
+    fetchBooking();
+  }, [bookingId, firestore]);
+
+  if (!booking) return <Text style={styles.loading}>Loading...</Text>;
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Booking Receipt</Text>
-
-      <View style={styles.details}>
-        <Text>Booking ID: {bookingDetails.bookingId}</Text>
-        <Text>Date: {bookingDetails.date}</Text>
-        <Text>Room: {bookingDetails.room}</Text>
-        <Text>Amount Paid: {bookingDetails.amount}</Text>
-      </View>
-
-      <Button title="Back to Home" onPress={() => navigation.replace("Home")} />
+      <Text>Name: {booking.name}</Text>
+      <Text>Amount: ${booking.amount.toFixed(2)}</Text>
+      <Text>Date: {booking.date.toDate().toLocaleString()}</Text>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    padding: 20,
-    backgroundColor: "#fff",
-  },
-  title: {
-    fontSize: 24,
-    textAlign: "center",
-    marginBottom: 20,
-    fontWeight: "bold",
-  },
-  details: {
-    marginBottom: 30,
-    padding: 15,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    backgroundColor: "#f9f9f9",
-  },
+  container: { flex: 1, padding: 20, justifyContent: 'center' },
+  title: { fontSize: 24, textAlign: 'center', marginBottom: 20 },
+  loading: { textAlign: 'center', marginTop: 50 },
 });
+
+export default ReceiptScreen;

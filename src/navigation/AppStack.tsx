@@ -1,26 +1,35 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import LoginScreen from '../screens/Auth/LoginScreen';
-import SignupScreen from '../screens/Auth/SignupScreen';
-import RoleScreen from '../screens/Auth/RoleScreen';
+import AuthScreen from '../screens/Auth/AuthScreen';
 import HomeScreen from '../screens/HomeScreen';
+import BookingScreen from '../screens/BookingScreen';
+import ReceiptScreen from '../screens/ReceiptScreen';
+import AdminScreen from '../screens/AdminScreen';
 
 export type RootStackParamList = {
-  Login: undefined;
-  Signup: undefined;
-  Role: undefined;
-  Home: undefined;
+  AuthScreen: undefined;
+  HomeScreen: undefined;
+  BookingScreen: undefined;
+  ReceiptScreen: { bookingId: string };
+  AdminScreen: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-const AppStack = () => (
-  <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="Login" component={LoginScreen} />
-    <Stack.Screen name="Signup" component={SignupScreen} />
-    <Stack.Screen name="Role" component={RoleScreen} />
-    <Stack.Screen name="Home" component={HomeScreen} />
-  </Stack.Navigator>
-);
+const AppStack = () => {
+  return (
+    <Stack.Navigator initialRouteName="AuthScreen">
+      <Stack.Screen
+        name="AuthScreen"
+        component={AuthScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen name="HomeScreen" component={HomeScreen} />
+      <Stack.Screen name="BookingScreen" component={BookingScreen} />
+      <Stack.Screen name="ReceiptScreen" component={ReceiptScreen} />
+      <Stack.Screen name="AdminScreen" component={AdminScreen} />
+    </Stack.Navigator>
+  );
+};
 
 export default AppStack;

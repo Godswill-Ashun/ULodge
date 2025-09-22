@@ -1,15 +1,26 @@
-import React from 'react';
-import { View, Text, Button } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../navigation/AppStack';
+import React, { useContext } from 'react';
+import { View, Text, Button, StyleSheet } from 'react-native';
+import { UserContext } from '../../context/UserContext';
+import { useNavigation } from '@react-navigation/native';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Role'>;
+export default function RoleScreen() {
+  const { setUserRole } = useContext(UserContext);
+  const navigation = useNavigation();
 
-const RoleScreen = ({ navigation }: Props) => (
-  <View style={{ flex:1, justifyContent:'center', alignItems:'center' }}>
-    <Text>Role Screen</Text>
-    <Button title="Go to Home" onPress={() => navigation.replace('Home')} />
-  </View>
-);
+  const selectRole = (role: string) => {
+    setUserRole(role);
+    navigation.navigate(role === 'admin' ? 'Admin' : 'Home');
+  };
 
-export default RoleScreen;
+  return (
+    <View style={styles.container}>
+      <Text>Select Role:</Text>
+      <Button title="Student" onPress={() => selectRole('student')} />
+      <Button title="Admin" onPress={() => selectRole('admin')} />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 10 },
+});
