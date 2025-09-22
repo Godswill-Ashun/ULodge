@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "643164904148",
+    "project_id": "ulodgeapp",
+    "storage_bucket": "ulodgeapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:643164904148:android:0bc4efb419e968f7f2f941",
+        "android_client_info": {
+          "package_name": "com.ulodge"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC_5_oJi0Kc1WcCB0F8u_7pD7JqLArhJMg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
