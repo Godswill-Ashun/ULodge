@@ -1,46 +1,43 @@
-// src/screens/Auth/AuthScreen.tsx
-import React, { useState, useContext } from 'react';
-import { View, TextInput, Button, Text, StyleSheet } from 'react-native';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from '@react-native-firebase/auth';
-import { UserContext } from '../../context/UserContext';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
+import auth from '@react-native-firebase/auth';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/AppStack';
 
-const AuthScreen = () => {
+type Props = NativeStackScreenProps<RootStackParamList, 'AuthScreen'>;
+
+const AuthScreen: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [error, setError] = useState('');
 
-  const { setUserRole } = useContext(UserContext);
-  const navigation = useNavigation();
-  const auth = getAuth();
-
-  const handleAuth = async () => {
-    setError('');
+  const handleLogin = async () => {
     try {
-      if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email, password);
-        setUserRole('student'); // default role
-      } else {
-        await signInWithEmailAndPassword(auth, email, password);
-        setUserRole('student'); // simplified for now
-      }
-      navigation.navigate('HomeScreen' as never); // go to HomeScreen
-    } catch (err: any) {
-      setError(err.message);
+      await auth().signInWithEmailAndPassword(email, password);
+      navigation.replace('HomeScreen');
+    } catch (error: any) {
+      Alert.alert('Login failed', error.message);
+    }
+  };
+
+  const handleSignup = async () => {
+    try {
+      await auth().createUserWithEmailAndPassword(email, password);
+      navigation.replace('HomeScreen');
+    } catch (error: any) {
+      Alert.alert('Signup failed', error.message);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{isSignUp ? 'Sign Up' : 'Login'}</Text>
-
+      <Text style={styles.title}>ULodge Login</Text>
       <TextInput
         style={styles.input}
         placeholder="Email"
-        autoCapitalize="none"
         value={email}
         onChangeText={setEmail}
+        autoCapitalize="none"
+        keyboardType="email-address"
       />
       <TextInput
         style={styles.input}
@@ -49,27 +46,16 @@ const AuthScreen = () => {
         value={password}
         onChangeText={setPassword}
       />
-
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-
-      <Button title={isSignUp ? 'Sign Up' : 'Login'} onPress={handleAuth} />
-
-      <Text
-        style={styles.toggleText}
-        onPress={() => setIsSignUp(!isSignUp)}
-      >
-        {isSignUp ? 'Already have an account? Login' : "Don't have an account? Sign Up"}
-      </Text>
+      <Button title="Login" onPress={handleLogin} />
+      <Button title="Signup" onPress={handleSignup} />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: 20 },
-  input: { borderWidth: 1, padding: 10, marginVertical: 10, borderRadius: 5 },
-  title: { fontSize: 24, textAlign: 'center', marginBottom: 20 },
-  toggleText: { textAlign: 'center', color: 'blue', marginTop: 10 },
-  error: { color: 'red', textAlign: 'center', marginBottom: 10 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  input: { borderWidth: 1, borderColor: '#ccc', padding: 10, marginBottom: 10, borderRadius: 6 },
 });
 
 export default AuthScreen;

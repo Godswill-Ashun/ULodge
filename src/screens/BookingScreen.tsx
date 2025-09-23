@@ -1,57 +1,63 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet } from 'react-native';
-import { getFirestore, collection, addDoc, Timestamp } from '@react-native-firebase/firestore';
-import { useNavigation } from '@react-navigation/native';
+import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
+import firestore from '@react-native-firebase/firestore';
+import auth from '@react-native-firebase/auth';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/AppStack';
 
-const BookingScreen = () => {
-  const [name, setName] = useState('');
-  const [amount, setAmount] = useState('');
-  const [error, setError] = useState('');
+type Props = NativeStackScreenProps<RootStackParamList, 'BookingScreen'>;
 
-  const navigation = useNavigation();
-  const firestore = getFirestore();
+const BookingScreen: React.FC<Props> = ({ navigation, route }) => {
+  const { hostelName, location, roomType, price } = route.params || {};
+  const [fullName, setFullName] = useState('');
 
   const handleBooking = async () => {
-    setError('');
+    const user = auth().currentUser;
+    if (!user) {
+      Alert.alert('Error', 'You must be logged in to book');
+      return;
+    }
+
     try {
-      const docRef = await addDoc(collection(firestore, 'bookings'), {
-        name,
-        amount: parseFloat(amount),
-        date: Timestamp.now(),
+      const bookingRef = await firestore().collection('bookings').add({
+        userId: user.uid,
+        fullName,
+        hostelName: hostelName || 'N/A',
+        location: location || 'N/A',
+        roomType: roomType || 'N/A',
+        price: price || 0,
+        createdAt: firestore.FieldValue.serverTimestamp(),
       });
-      navigation.navigate('ReceiptScreen', { bookingId: docRef.id } as never);
-    } catch (err: any) {
-      setError(err.message);
+
+      navigation.navigate('ReceiptScreen', { bookingId: bookingRef.id });
+    } catch (error: any) {
+      Alert.alert('Booking failed', error.message);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Booking</Text>
+      <Text style={styles.title}>Booking Details</Text>
+      <Text>Hostel: {hostelName}</Text>
+      <Text>Location: {location}</Text>
+      <Text>Room Type: {roomType}</Text>
+      <Text>Price: {price}</Text>
+
       <TextInput
         style={styles.input}
-        placeholder="Name"
-        value={name}
-        onChangeText={setName}
+        placeholder="Your Full Name"
+        value={fullName}
+        onChangeText={setFullName}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Amount"
-        keyboardType="numeric"
-        value={amount}
-        onChangeText={setAmount}
-      />
-      {error ? <Text style={styles.error}>{error}</Text> : null}
       <Button title="Confirm Booking" onPress={handleBooking} />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, justifyContent: 'center' },
-  input: { borderWidth: 1, padding: 10, marginVertical: 10, borderRadius: 5 },
-  title: { fontSize: 24, textAlign: 'center', marginBottom: 20 },
-  error: { color: 'red', textAlign: 'center', marginBottom: 10 },
+  container: { flex: 1, padding: 20 },
+  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 15 },
+  input: { borderWidth: 1, borderColor: '#ccc', padding: 10, marginVertical: 10, borderRadius: 6 },
 });
 
 export default BookingScreen;
