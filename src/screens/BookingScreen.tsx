@@ -1,7 +1,8 @@
+// src/screens/BookingScreen.tsx
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
-import firestore from '@react-native-firebase/firestore';
-import auth from '@react-native-firebase/auth';
+import { getFirestore, collection, addDoc, serverTimestamp } from '@react-native-firebase/firestore';
+import { getAuth } from '@react-native-firebase/auth';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/AppStack';
 
@@ -11,22 +12,25 @@ const BookingScreen: React.FC<Props> = ({ navigation, route }) => {
   const { hostelName, location, roomType, price } = route.params || {};
   const [fullName, setFullName] = useState('');
 
+  const auth = getAuth();
+  const firestore = getFirestore();
+
   const handleBooking = async () => {
-    const user = auth().currentUser;
+    const user = auth.currentUser;
     if (!user) {
       Alert.alert('Error', 'You must be logged in to book');
       return;
     }
 
     try {
-      const bookingRef = await firestore().collection('bookings').add({
+      const bookingRef = await addDoc(collection(firestore, 'bookings'), {
         userId: user.uid,
         fullName,
         hostelName: hostelName || 'N/A',
         location: location || 'N/A',
         roomType: roomType || 'N/A',
         price: price || 0,
-        createdAt: firestore.FieldValue.serverTimestamp(),
+        createdAt: serverTimestamp(),
       });
 
       navigation.navigate('ReceiptScreen', { bookingId: bookingRef.id });
@@ -49,7 +53,10 @@ const BookingScreen: React.FC<Props> = ({ navigation, route }) => {
         value={fullName}
         onChangeText={setFullName}
       />
-      <Button title="Confirm Booking" onPress={handleBooking} />
+      <Button
+        title="Confirm Booking"
+        onPress={handleBooking}
+      />
     </View>
   );
 };

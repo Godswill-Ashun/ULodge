@@ -1,19 +1,34 @@
-import React, { useState } from 'react';
+// src/screens/Auth/AuthScreen.tsx
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
-import auth from '@react-native-firebase/auth';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from '@react-native-firebase/auth';
+import { getFirestore, doc, setDoc, serverTimestamp } from '@react-native-firebase/firestore';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/AppStack';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AuthScreen'>;
 
 const AuthScreen: React.FC<Props> = ({ navigation }) => {
+  const auth = getAuth(); // Modular Auth
+  const firestore = getFirestore(); // Modular Firestore
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  // Automatic navigation on auth state change
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        navigation.replace('HomeScreen'); // Navigate once user is confirmed
+      }
+    });
+    return () => unsubscribe(); // Cleanup listener on unmount
+  }, [auth, navigation]);
+
   const handleLogin = async () => {
     try {
-      await auth().signInWithEmailAndPassword(email, password);
-      navigation.replace('HomeScreen');
+      await signInWithEmailAndPassword(auth, email, password);
+      // Navigation is handled by onAuthStateChanged
     } catch (error: any) {
       Alert.alert('Login failed', error.message);
     }
@@ -21,8 +36,20 @@ const AuthScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleSignup = async () => {
     try {
-      await auth().createUserWithEmailAndPassword(email, password);
-      navigation.replace('HomeScreen');
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Create Firestore document for the new user
+      await setDoc(doc(firestore, 'users', user.uid), {
+        role: 'student',
+        managerOfHostels: [],
+        isDeveloper: false,
+        displayName: user.displayName || '',
+        email: user.email,
+        createdAt: serverTimestamp(),
+      });
+
+      // Navigation handled by onAuthStateChanged
     } catch (error: any) {
       Alert.alert('Signup failed', error.message);
     }

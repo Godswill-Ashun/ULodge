@@ -1,7 +1,8 @@
+// src/screens/ReceiptScreen.tsx
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import firestore from '@react-native-firebase/firestore';
-import { RouteProp, useRoute } from '@react-navigation/native';
+import { getFirestore, doc, getDoc, Timestamp } from '@react-native-firebase/firestore';
+import { useRoute, RouteProp } from '@react-navigation/native';
 
 type ReceiptRouteProp = RouteProp<{ params: { bookingId: string } }, 'params'>;
 
@@ -10,8 +11,8 @@ type Booking = {
   hostelName?: string;
   location?: string;
   roomType?: string;
-  amount?: number;
-  date?: FirebaseFirestoreTypes.Timestamp;
+  price?: number;
+  createdAt?: Timestamp;
 };
 
 const ReceiptScreen = () => {
@@ -19,16 +20,15 @@ const ReceiptScreen = () => {
   const { bookingId } = route.params;
 
   const [booking, setBooking] = useState<Booking | null>(null);
+  const firestore = getFirestore();
 
   useEffect(() => {
     const fetchBooking = async () => {
       try {
-        const docSnap = await firestore()
-          .collection('bookings')
-          .doc(bookingId)
-          .get();
+        const docRef = doc(firestore, 'bookings', bookingId);
+        const docSnap = await getDoc(docRef);
 
-        if (docSnap.exists) {
+        if (docSnap.exists()) {
           setBooking(docSnap.data() as Booking);
         } else {
           console.log('No booking found');
@@ -39,7 +39,7 @@ const ReceiptScreen = () => {
     };
 
     fetchBooking();
-  }, [bookingId]);
+  }, [bookingId, firestore]);
 
   if (!booking) {
     return <Text style={styles.loading}>Loading...</Text>;
@@ -53,15 +53,12 @@ const ReceiptScreen = () => {
       <Text>Location: {booking.location || 'N/A'}</Text>
       <Text>Room Type: {booking.roomType || 'N/A'}</Text>
       <Text>
-        Amount: $
-        {typeof booking.amount === 'number'
-          ? booking.amount.toFixed(2)
-          : 'N/A'}
+        Price: {typeof booking.price === 'number' ? `$${booking.price.toFixed(2)}` : 'N/A'}
       </Text>
       <Text>
         Date:{' '}
-        {booking.date && booking.date.toDate
-          ? booking.date.toDate().toLocaleString()
+        {booking.createdAt && booking.createdAt.toDate
+          ? booking.createdAt.toDate().toLocaleString()
           : 'N/A'}
       </Text>
     </View>
