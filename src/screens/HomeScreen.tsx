@@ -1,5 +1,5 @@
 // src/screens/HomeScreen.tsx
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,21 +8,51 @@ import {
   ScrollView,
   Image,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { UserContext } from '../context/UserContext';
-import { hostels } from '../data/hostels';
+import firestore from '@react-native-firebase/firestore';
 
 export default function HomeScreen() {
   const { userRole } = useContext(UserContext);
   const navigation = useNavigation();
   const [search, setSearch] = useState('');
+  const [hostels, setHostels] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = firestore()
+      .collection('hostels')
+      .orderBy('createdAt', 'desc')
+      .onSnapshot(
+        snapshot => {
+          const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setHostels(list);
+          setLoading(false);
+        },
+        error => {
+          console.log('Firestore fetch error:', error);
+          setLoading(false);
+        }
+      );
+
+    return () => unsubscribe();
+  }, []);
 
   const filteredHostels = hostels.filter(
     h =>
       h.name.toLowerCase().includes(search.toLowerCase()) ||
       h.location.toLowerCase().includes(search.toLowerCase())
   );
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="green" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -41,11 +71,9 @@ export default function HomeScreen() {
           <TouchableOpacity
             key={hostel.id}
             style={styles.hostelCard}
-            onPress={() =>
-              navigation.navigate('DetailsScreen', { hostel } as never)
-            }
+            onPress={() => navigation.navigate('DetailsScreen', { hostel } as never)}
           >
-            <Image source={hostel.image} style={styles.hostelImage} />
+            {/* No images yet */}
             <View style={{ flex: 1 }}>
               <Text style={styles.hostelName}>{hostel.name}</Text>
               <Text>{hostel.location}</Text>
@@ -54,7 +82,7 @@ export default function HomeScreen() {
         ))}
       </ScrollView>
 
-      {/* Settings button */}
+      {/* Settings button ⚙️ */}
       <TouchableOpacity
         style={styles.settingsButton}
         onPress={() => navigation.navigate('SettingsScreen' as never)}
@@ -86,7 +114,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     backgroundColor: '#fff',
   },
-  hostelImage: { width: 80, height: 80, marginRight: 10, borderRadius: 15 },
   hostelName: { fontSize: 18, fontWeight: 'bold', color: 'green' },
 
   settingsButton: {
